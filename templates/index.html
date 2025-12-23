@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuzzy Air Quality Assessment System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1><i class="fas fa-wind"></i> Fuzzy Air Quality Assessment System</h1>
+            <p class="subtitle">A comprehensive fuzzy logic-based system for assessing air quality</p>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Panel - Input and Results -->
+            <div class="left-panel">
+                <!-- Input Section -->
+                <div class="card input-section">
+                    <h2><i class="fas fa-sliders-h"></i> Air Quality Parameters</h2>
+                    <div class="input-group">
+                        <!-- CO Ground Truth -->
+                        <div class="input-slider">
+                            <label for="co-gt-slider">
+                                <i class="fas fa-smog"></i> CO (Ground Truth): 
+                                <span id="co-gt-value">2.5</span> mg/m³
+                            </label>
+                            <input type="range" id="co-gt-slider" min="0" max="20" step="0.1" value="2.5">
+                            <div class="slider-labels"><span>Clean</span><span>Moderate</span><span>High</span></div>
+                        </div>
+
+                        <!-- CO Sensor -->
+                        <div class="input-slider">
+                            <label for="co-sensor-slider">
+                                <i class="fas fa-microchip"></i> CO Sensor: 
+                                <span id="co-sensor-value">1000</span> µV
+                            </label>
+                            <input type="range" id="co-sensor-slider" min="0" max="2000" step="10" value="1000">
+                            <div class="slider-labels"><span>Low</span><span>Medium</span><span>High</span></div>
+                        </div>
+
+                        <!-- NMHC Ground Truth -->
+                        <div class="input-slider">
+                            <label for="nmhc-gt-slider">
+                                <i class="fas fa-flask"></i> NMHC (GT): 
+                                <span id="nmhc-gt-value">150</span> µg/m³
+                            </label>
+                            <input type="range" id="nmhc-gt-slider" min="0" max="500" step="5" value="150">
+                            <div class="slider-labels"><span>Low</span><span>Medium</span><span>High</span></div>
+                        </div>
+
+                        <!-- Benzene Ground Truth -->
+                        <div class="input-slider">
+                            <label for="benzene-slider">
+                                <i class="fas fa-droplet"></i> Benzene (GT): 
+                                <span id="benzene-value">10</span> µg/m³
+                            </label>
+                            <input type="range" id="benzene-slider" min="0" max="50" step="0.5" value="10">
+                            <div class="slider-labels"><span>Safe</span><span>Moderate</span><span>High</span></div>
+                        </div>
+
+                        <!-- NMHC Sensor -->
+                        <div class="input-slider">
+                            <label for="nmhc-sensor-slider">
+                                <i class="fas fa-microchip"></i> NMHC Sensor: 
+                                <span id="nmhc-sensor-value">900</span> µV
+                            </label>
+                            <input type="range" id="nmhc-sensor-slider" min="0" max="2000" step="10" value="900">
+                            <div class="slider-labels"><span>Low</span><span>Medium</span><span>High</span></div>
+                        </div>
+
+                        <!-- NOx Ground Truth -->
+                        <div class="input-slider">
+                            <label for="nox-gt-slider">
+                                <i class="fas fa-cloud-bolt"></i> NOx (GT): 
+                                <span id="nox-gt-value">200</span> ppb
+                            </label>
+                            <input type="range" id="nox-gt-slider" min="0" max="500" step="5" value="200">
+                            <div class="slider-labels"><span>Low</span><span>Medium</span><span>High</span></div>
+                        </div>
+
+                        <!-- NOx Sensor -->
+                        <div class="input-slider">
+                            <label for="nox-sensor-slider">
+                                <i class="fas fa-microchip"></i> NOx Sensor: 
+                                <span id="nox-sensor-value">500</span> µV
+                            </label>
+                            <input type="range" id="nox-sensor-slider" min="0" max="2000" step="10" value="500">
+                            <div class="slider-labels"><span>Low</span><span>Medium</span><span>High</span></div>
+                        </div>
+
+                        <!-- NO2 Ground Truth -->
+                        <div class="input-slider">
+                            <label for="no2-gt-slider">
+                                <i class="fas fa-industry"></i> NO₂ (GT): 
+                                <span id="no2-gt-value">80</span> ppb
+                            </label>
+                            <input type="range" id="no2-gt-slider" min="0" max="400" step="1" value="80">
+                            <div class="slider-labels"><span>Clean</span><span>Moderate</span><span>High</span></div>
+                        </div>
+
+                        <!-- NO2 Sensor -->
+                        <div class="input-slider">
+                            <label for="no2-sensor-slider">
+                                <i class="fas fa-microchip"></i> NO₂ Sensor: 
+                                <span id="no2-sensor-value">700</span> µV
+                            </label>
+                            <input type="range" id="no2-sensor-slider" min="0" max="2000" step="10" value="700">
+                            <div class="slider-labels"><span>Low</span><span>Medium</span><span>High</span></div>
+                        </div>
+
+                        <!-- O3 Sensor -->
+                        <div class="input-slider">
+                            <label for="o3-sensor-slider">
+                                <i class="fas fa-sun"></i> Ozone (O₃) Sensor: 
+                                <span id="o3-sensor-value">750</span> µV
+                            </label>
+                            <input type="range" id="o3-sensor-slider" min="0" max="3000" step="10" value="750">
+                            <div class="slider-labels"><span>Good</span><span>Moderate</span><span>High</span></div>
+                        </div>
+
+                        <!-- Temperature Slider -->
+                        <div class="input-slider">
+                            <label for="temp-slider">
+                                <i class="fas fa-thermometer-half"></i> Temperature: 
+                                <span id="temp-value">20.0</span> °C
+                            </label>
+                            <input type="range" id="temp-slider" min="-10" max="50" step="0.5" value="20.0">
+                            <div class="slider-labels">
+                                <span>Cold</span>
+                                <span>Comfortable</span>
+                                <span>Hot</span>
+                            </div>
+                        </div>
+
+                        <!-- Relative Humidity -->
+                        <div class="input-slider">
+                            <label for="humidity-slider">
+                                <i class="fas fa-tint"></i> Relative Humidity: 
+                                <span id="humidity-value">50.0</span> %
+                            </label>
+                            <input type="range" id="humidity-slider" min="0" max="100" step="1" value="50.0">
+                            <div class="slider-labels">
+                                <span>Dry</span>
+                                <span>Comfortable</span>
+                                <span>Humid</span>
+                            </div>
+                        </div>
+
+                        <!-- Absolute Humidity -->
+                        <div class="input-slider">
+                            <label for="abs-humidity-slider">
+                                <i class="fas fa-water"></i> Absolute Humidity: 
+                                <span id="abs-humidity-value">10.0</span> g/m³
+                            </label>
+                            <input type="range" id="abs-humidity-slider" min="0" max="20" step="0.1" value="10.0">
+                            <div class="slider-labels">
+                                <span>Low</span>
+                                <span>Medium</span>
+                                <span>High</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Buttons kept outside the scrollable input group so they're always visible -->
+                    <div class="button-group" style="margin-top:15px;">
+                        <button id="assess-btn" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Basic Assessment
+                        </button>
+                        <button id="enhanced-assess-btn" class="btn btn-enhanced">
+                            <i class="fas fa-chart-line"></i> Enhanced Assessment
+                        </button>
+                        <button id="calc-crisp-btn" class="btn btn-warning">
+                            <i class="fas fa-calculator"></i> Calculate Crisp AQI
+                        </button>
+                        <button id="random-btn" class="btn btn-secondary">
+                            <i class="fas fa-random"></i> Random Sample
+                        </button>
+                        <button id="reset-btn" class="btn btn-outline">
+                            <i class="fas fa-redo"></i> Reset
+                        </button>
+                    </div>
+                    <!-- Crisp Settings -->
+                    <div class="card" style="margin-top:12px; padding:12px;">
+                        <h3 style="font-size:1rem; margin-bottom:8px;">Crisp AQI Settings</h3>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <div style="min-width:220px;">
+                                <label style="font-weight:600;">CO Scores (lt1,lt3,lt5,lt7)</label>
+                                <div style="display:flex;gap:6px;margin-top:6px;">
+                                    <input id="crisp-co-1" type="number" value="40" style="width:48px;padding:6px;" />
+                                    <input id="crisp-co-3" type="number" value="30" style="width:48px;padding:6px;" />
+                                    <input id="crisp-co-5" type="number" value="20" style="width:48px;padding:6px;" />
+                                    <input id="crisp-co-7" type="number" value="10" style="width:48px;padding:6px;" />
+                                </div>
+                            </div>
+                            <div style="min-width:220px;">
+                                <label style="font-weight:600;">NO2 Scores (lt50,lt100,lt150,lt200)</label>
+                                <div style="display:flex;gap:6px;margin-top:6px;">
+                                    <input id="crisp-no2-50" type="number" value="35" style="width:48px;padding:6px;" />
+                                    <input id="crisp-no2-100" type="number" value="25" style="width:48px;padding:6px;" />
+                                    <input id="crisp-no2-150" type="number" value="15" style="width:48px;padding:6px;" />
+                                    <input id="crisp-no2-200" type="number" value="5" style="width:48px;padding:6px;" />
+                                </div>
+                            </div>
+                            <div style="min-width:160px;">
+                                <label style="font-weight:600;">O3 Scores (lt50,lt100,lt150)</label>
+                                <div style="display:flex;gap:6px;margin-top:6px;">
+                                    <input id="crisp-o3-50" type="number" value="25" style="width:48px;padding:6px;" />
+                                    <input id="crisp-o3-100" type="number" value="15" style="width:48px;padding:6px;" />
+                                    <input id="crisp-o3-150" type="number" value="5" style="width:48px;padding:6px;" />
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-top:10px; display:flex; gap:8px;">
+                            <button id="save-crisp-settings" class="btn btn-small btn-primary">Save Settings</button>
+                            <button id="reset-crisp-settings" class="btn btn-small btn-outline">Reset Defaults</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div class="card results-section">
+                    <h2><i class="fas fa-chart-line"></i> Assessment Results</h2>
+                    <div id="results-container" class="results-container">
+                        <div class="loading" id="loading-results" style="display: none;">
+                            <div class="spinner"></div>
+                            <p>Processing fuzzy inference...</p>
+                        </div>
+                        
+                        <div class="results-content" id="results-content">
+                            <!-- Initial placeholder -->
+                            <div class="no-data">
+                                <i class="fas fa-chart-bar" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                                <h3>No Assessment Yet</h3>
+                                <p>Adjust the sliders and click "Basic Assessment" or "Enhanced Assessment" to see results.</p>
+                            </div>
+                            
+                            <!-- Dynamic content will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Visualizations -->
+            <div class="right-panel">
+                <!-- Membership Functions -->
+                <!-- In your index.html, update the chart sections -->
+
+                <!-- Membership Functions Section -->
+                <div class="card visualization-section">
+                    <h2><i class="fas fa-project-diagram"></i> Membership Functions</h2>
+                    <div class="viz-controls">
+                        <select id="mf-select" class="viz-select">
+                            <option value="date">Date</option>
+                            <option value="time">Time</option>
+                            <option value="co">CO (Ground Truth)</option>
+                            <option value="co_sensor">PT08.S1(CO) - CO Sensor</option>
+                            <option value="nmhc">NMHC (GT)</option>
+                            <option value="benzene">C6H6 (GT) - Benzene</option>
+                            <option value="nmhc_sensor">PT08.S2(NMHC) - NMHC Sensor</option>
+                            <option value="nox">NOx (GT)</option>
+                            <option value="nox_sensor">PT08.S3(NOx) - NOx Sensor</option>
+                            <option value="no2">NO2 (GT)</option>
+                            <option value="no2_sensor">PT08.S4(NO2) - NO2 Sensor</option>
+                            <option value="o3">PT08.S5(O3) - O3 Sensor</option>
+                            <option value="temperature">T - Temperature</option>
+                            <option value="humidity">RH - Relative Humidity</option>
+                            <option value="abs_humidity">AH - Absolute Humidity</option>
+                            <option value="aqi">AQI Output</option>
+                        </select>
+                        <button id="refresh-viz" class="btn btn-small">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="chart-container" id="mf-chart-container">
+                        <canvas id="mf-chart"></canvas>
+                    </div>
+                    <div class="chart-info" id="mf-chart-info">
+                        <small>Shows fuzzy membership degrees for different input levels</small>
+                    </div>
+                </div>
+
+                <!-- Performance Analysis Section -->
+                <div class="card performance-section">
+                    <h2><i class="fas fa-chart-bar"></i> Performance Analysis</h2>
+                    <div class="viz-controls">
+                        <button id="run-comparison" class="btn btn-primary">
+                            <i class="fas fa-play"></i> Run Comparison
+                        </button>
+                        <button id="advanced-comparison-btn" class="btn btn-advanced">
+                            <i class="fas fa-rocket"></i> Advanced
+                        </button>
+                        <!-- In your index.html -->
+                        <div class="sample-control">
+                            <input type="number" id="sample-size" value="100" min="10" max="1000" 
+                                style="width: 70px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;"
+                                title="Maximum 1000 samples for performance">
+                            <label for="sample-size" style="color: #7f8c8d; font-size: 0.9rem;">samples</label>
+                        </div>
+
+                        <!-- Add tooltip/warning for large samples -->
+                        <div id="sample-warning" style="display: none; margin-top: 5px;">
+                            <div class="alert alert-warning" style="padding: 8px; font-size: 0.85rem;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Large sample sizes may affect performance. Showing limited samples in graph.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="performance-chart-container">
+                        <canvas id="performance-chart"></canvas>
+                    </div>
+                    <div class="metrics-display" id="metrics-display">
+                        <div class="no-data">
+                            <p>Run a comparison to see performance metrics</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Advanced Visualizations Section -->
+                <div class="card visualization-section">
+                    <h2><i class="fas fa-chart-network"></i> Advanced Visualizations</h2>
+                    <div class="viz-tabs">
+                        <button class="viz-tab active" data-chart="mf">Membership</button>
+                        <button class="viz-tab" data-chart="rule">Rule Activations</button>
+                        <button class="viz-tab" data-chart="radar">Performance Radar</button>
+                        <button class="viz-tab" data-chart="comparison">Comparison Chart</button>
+                    </div>
+                    
+                    <div id="mf-parameter-selector" style="margin: 15px 0; display: none;">
+                        <label for="mf-param-select" style="font-weight: 600; margin-right: 10px;">Select Parameter:</label>
+                        <select id="mf-param-select" style="padding: 8px 12px; border-radius: 4px; border: 1px solid #ddd; font-size: 14px;">
+                            <option value="CO_GT">CO Ground Truth</option>
+                            <option value="CO_Sensor">CO Sensor</option>
+                            <option value="NMHC_GT">NMHC Ground Truth</option>
+                            <option value="Benzene">Benzene</option>
+                            <option value="NMHC_Sensor">NMHC Sensor</option>
+                            <option value="NOx_GT">NOx Ground Truth</option>
+                            <option value="NOx_Sensor">NOx Sensor</option>
+                            <option value="NO2_GT">NO2 Ground Truth</option>
+                            <option value="NO2_Sensor">NO2 Sensor</option>
+                            <option value="O3_Sensor">O3 Sensor</option>
+                            <option value="Temperature">Temperature</option>
+                            <option value="Humidity">Relative Humidity</option>
+                            <option value="Abs_Humidity">Absolute Humidity</option>
+                            <option value="AQI">Air Quality Index</option>
+                        </select>
+                    </div>
+                    
+                    <div class="chart-container" id="advanced-chart-container">
+                        <div class="viz-tab-content active" id="mf-tab-content">
+                            <canvas id="mf-chart-advanced"></canvas>
+                        </div>
+                        <div class="viz-tab-content" id="rule-tab-content">
+                            <canvas id="rule-chart"></canvas>
+                        </div>
+                        <div class="viz-tab-content" id="radar-tab-content">
+                            <canvas id="radar-chart"></canvas>
+                        </div>
+                        <div class="viz-tab-content" id="comparison-tab-content">
+                            <canvas id="comparison-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="viz-description" id="viz-description">
+                        <p>Select a visualization tab to see different aspects of the fuzzy system.</p>
+                    </div>
+                </div>
+
+                <!-- Dataset Information -->
+                <div class="card dataset-section">
+                    <h2><i class="fas fa-database"></i> Dataset Information</h2>
+                    <div class="dataset-stats" id="dataset-stats">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Loading dataset statistics...</p>
+                        </div>
+                    </div>
+                    <div class="dataset-description">
+                        <h4>About the Dataset</h4>
+                        <p>The Air Quality UCI dataset contains 9358 instances of hourly averaged responses from an array of 5 metal oxide chemical sensors embedded in an Air Quality Chemical Multisensor Device.</p>
+                        <p>This system uses fuzzy logic to provide more accurate and nuanced air quality assessments compared to traditional crisp methods.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Fuzzy Air Quality Assessment System &copy; 2024 | Built with Flask and Fuzzy Logic</p>
+            <div class="footer-links">
+                <a href="/health" target="_blank"><i class="fas fa-heartbeat"></i> System Health</a>
+                <a href="#" id="test-endpoint"><i class="fas fa-vial"></i> Test Endpoint</a>
+                <a href="#" id="debug-info"><i class="fas fa-bug"></i> Debug Info</a>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modal for Category Information -->
+    <div class="modal" id="category-modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Air Quality Categories</h3>
+            <div class="category-list">
+                <div class="category-item excellent">
+                    <span class="category-name">Excellent (0-25)</span>
+                    <p>Air quality is satisfactory, and air pollution poses little or no risk.</p>
+                </div>
+                <div class="category-item good">
+                    <span class="category-name">Good (26-50)</span>
+                    <p>Air quality is acceptable. However, there may be a risk for some people.</p>
+                </div>
+                <div class="category-item fair">
+                    <span class="category-name">Fair (51-75)</span>
+                    <p>Members of sensitive groups may experience health effects.</p>
+                </div>
+                <div class="category-item poor">
+                    <span class="category-name">Poor (76-90)</span>
+                    <p>Everyone may begin to experience health effects.</p>
+                </div>
+                <div class="category-item very-poor">
+                    <span class="category-name">Very Poor (91-100)</span>
+                    <p>Health warning of emergency conditions.</p>
+                </div>
+                <div class="category-item hazardous">
+                    <span class="category-name">Hazardous (300-500)</span>
+                    <p>Emergency conditions: everyone is likely to be affected.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
