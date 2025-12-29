@@ -218,6 +218,7 @@
                         <div style="margin-top:10px; display:flex; gap:8px;">
                             <button id="save-crisp-settings" class="btn btn-small btn-primary">Save Settings</button>
                             <button id="reset-crisp-settings" class="btn btn-small btn-outline">Reset Defaults</button>
+                            <button id="random-crisp-btn" class="btn btn-small btn-secondary">Random Crisp</button>
                         </div>
                     </div>
                 </div>
@@ -381,8 +382,10 @@
                     </div>
                     <div class="dataset-description">
                         <h4>About the Dataset</h4>
-                        <p>The Air Quality UCI dataset contains 9358 instances of hourly averaged responses from an array of 5 metal oxide chemical sensors embedded in an Air Quality Chemical Multisensor Device.</p>
-                        <p>This system uses fuzzy logic to provide more accurate and nuanced air quality assessments compared to traditional crisp methods.</p>
+                        <p>The UCI Air Quality dataset (<em>AirQualityUCI.csv</em>) contains 9,538 hourly samples of sensor responses and reference pollutant concentrations collected near an Italian monitoring station. Source: <a href="https://archive.ics.uci.edu/ml/datasets/Air+Quality" target="_blank">UCI Machine Learning Repository</a>.</p>
+                        <p><strong>Fields used:</strong> CO (mg/m³), NO₂ (ppb), PT08.S5(O3) (O₃ sensor, µV), Temperature (°C), Relative Humidity (%).</p>
+                        <p><strong>Preprocessing:</strong> invalid sensor values encoded as -200 are treated as missing and replaced with NaN; non-numeric fields are coerced to numeric where possible and rows with missing values are removed. If the CSV is unavailable the system generates synthetic data for demos.</p>
+                        <p>This dataset is used to generate membership functions, tune fuzzy rules, and evaluate fuzzy vs crisp methods via the Performance Analysis tools in the UI.</p>
                     </div>
                 </div>
             </div>

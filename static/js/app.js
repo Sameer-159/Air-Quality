@@ -6,6 +6,16 @@ let radarChart = null;
 let mfData = null;
 let advancedMFChart = null;
 
+// Helper function to safely calculate percentage gains without infinity
+function safePercentGain(fuzzyVal, crispVal) {
+    if (crispVal === 0 || !isFinite(crispVal)) {
+        return fuzzyVal > crispVal ? 50 : (fuzzyVal < crispVal ? -50 : 0);
+    }
+    const gain = ((fuzzyVal - crispVal) / Math.abs(crispVal)) * 100;
+    // Cap gain at ±300% to avoid extreme values
+    return Math.max(-300, Math.min(300, gain));
+}
+
 // DOM Content Loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log("Initializing Air Quality System...");
@@ -87,6 +97,7 @@ function setupEventListeners() {
     document.getElementById('reset-btn')?.addEventListener('click', resetInputs);
     document.getElementById('save-crisp-settings')?.addEventListener('click', saveCrispSettings);
     document.getElementById('reset-crisp-settings')?.addEventListener('click', resetCrispSettingsToDefaults);
+    document.getElementById('random-crisp-btn')?.addEventListener('click', randomizeCrispSettingsAndCalc);
     
     // Visualization controls
     document.getElementById('mf-select')?.addEventListener('change', updateMFChart);
@@ -149,29 +160,73 @@ function calculateCrispAQI() {
     const o3 = parseFloat(document.getElementById('o3-sensor-slider')?.value || 750);
 
     // Apply scoring logic using settings
-    let score = 0;
+    // Pick bracket settings for each pollutant
+    function pickCOsetting(val) {
+        if (val < 1) return settings.co[0];
+        if (val < 3) return settings.co[1];
+        if (val < 5) return settings.co[2];
+        return settings.co[3];
+    }
+    function pickNO2setting(val) {
+        if (val < 50) return settings.no2[0];
+        if (val < 100) return settings.no2[1];
+        if (val < 150) return settings.no2[2];
+        return settings.no2[3];
+    }
+    function pickO3setting(val) {
+        if (val < 50) return settings.o3[0];
+        if (val < 100) return settings.o3[1];
+        return settings.o3[2];
+    }
 
-    // CO contribution
-    if (co < 1) score += settings.co[0];
-    else if (co < 3) score += settings.co[1];
-    else if (co < 5) score += settings.co[2];
-    else if (co < 7) score += settings.co[3];
+    const coSetting = pickCOsetting(co);
+    const no2Setting = pickNO2setting(no2);
+    const o3Setting = pickO3setting(o3);
 
-    // NO2 contribution
-    if (no2 < 50) score += settings.no2[0];
-    else if (no2 < 100) score += settings.no2[1];
-    else if (no2 < 150) score += settings.no2[2];
-    else if (no2 < 200) score += settings.no2[3];
+    // Use direct pollutant severity based on typical thresholds
+    const coSeverity = Math.min(1, co / 7); // 0..1, where 7 mg/m3 regarded as high
+    const no2Severity = Math.min(1, no2 / 200); // 0..1, 200 ppb high
+    const o3Severity = Math.min(1, o3 / 150); // 0..1, 150 ppb high
 
-    // O3 contribution
-    if (o3 < 50) score += settings.o3[0];
-    else if (o3 < 100) score += settings.o3[1];
-    else if (o3 < 150) score += settings.o3[2];
+    // Tuneable weights emphasizing CO/NO2 more
+    const w_co = 0.45;
+    const w_no2 = 0.35;
+    const w_o3 = 0.20;
 
-    // Convert to AQI (0-100 scale used by calculate_crisp_aqi)
-    const aqi = Math.max(0, Math.min(100, 100 - (score / 100 * 100)));
+    let rawNormalized = (coSeverity * w_co) + (no2Severity * w_no2) + (o3Severity * w_o3);
 
-    // Category mapping same as get_category
+    // Let user crisp settings influence the final score more strongly
+    const maxCoSetting = Math.max(...settings.co, 1);
+    const maxNo2Setting = Math.max(...settings.no2, 1);
+    const maxO3Setting = Math.max(...settings.o3, 1);
+
+    const crispCoN = coSetting / maxCoSetting; // 0..1
+    const crispNo2N = no2Setting / maxNo2Setting;
+    const crispO3N = o3Setting / maxO3Setting;
+
+    // Compose a crisp-derived score (weights emphasize CO)
+    const crisp_w_co = 0.50;
+    const crisp_w_no2 = 0.30;
+    const crisp_w_o3 = 0.20;
+    const crispCombined = (crispCoN * crisp_w_co) + (crispNo2N * crisp_w_no2) + (crispO3N * crisp_w_o3);
+
+    // Blend sensor-derived severity with user crisp settings — give crisp settings strong influence
+    const crispInfluence = 0.72; // majority weight to user crisp values
+    rawNormalized = (rawNormalized * (1 - crispInfluence)) + (crispCombined * crispInfluence);
+
+    // Environment modifiers
+    const temp = parseFloat(document.getElementById('temp-slider')?.value || 20.0);
+    const humidity = parseFloat(document.getElementById('humidity-slider')?.value || 50.0);
+    if (temp < 5 || temp > 35) rawNormalized *= 1.05;
+    if (humidity < 20 || humidity > 80) rawNormalized *= 1.03;
+
+    // Calibration factor to increase overall sensitivity for large-sample behavior
+    const calibration = 1.45; // tuned to raise average AQI while avoiding full saturation
+    let finalNormalized = Math.min(1, Math.max(0, rawNormalized * calibration));
+
+    const aqi = +((finalNormalized * 100)).toFixed(2);
+
+    // Category mapping (keeps original boundaries)
     let category;
     if (aqi <= 25) category = 'Excellent';
     else if (aqi <= 50) category = 'Good';
@@ -272,6 +327,37 @@ function resetCrispSettingsToDefaults() {
 
     try { localStorage.removeItem('crisp_settings'); } catch(e){}
     alert('Crisp settings reset to defaults.');
+}
+
+// Randomize crisp settings only and calculate crisp AQI
+function randomizeCrispSettingsAndCalc() {
+    function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+    // CO scores (lt1,lt3,lt5,lt7)
+    document.getElementById('crisp-co-1').value = randInt(0, 50);
+    document.getElementById('crisp-co-3').value = randInt(0, 50);
+    document.getElementById('crisp-co-5').value = randInt(0, 50);
+    document.getElementById('crisp-co-7').value = randInt(0, 50);
+
+    // NO2 scores (lt50,lt100,lt150,lt200)
+    document.getElementById('crisp-no2-50').value = randInt(0, 40);
+    document.getElementById('crisp-no2-100').value = randInt(0, 40);
+    document.getElementById('crisp-no2-150').value = randInt(0, 40);
+    document.getElementById('crisp-no2-200').value = randInt(0, 40);
+
+    // O3 scores (lt50,lt100,lt150)
+    document.getElementById('crisp-o3-50').value = randInt(0, 30);
+    document.getElementById('crisp-o3-100').value = randInt(0, 30);
+    document.getElementById('crisp-o3-150').value = randInt(0, 30);
+
+    // Persist these random settings if user previously saved settings
+    try {
+        const settings = getCrispSettings();
+        localStorage.setItem('crisp_settings', JSON.stringify(settings));
+    } catch (e) {}
+
+    // Calculate and display crisp AQI using new random crisp settings
+    calculateCrispAQI();
 }
 
 // Load saved crisp settings from localStorage on startup
@@ -1246,15 +1332,15 @@ function displayPerformanceComparison(result) {
                     <div class="metric-body">
                         <div class="metric-row">
                             <span>MAE Reduction:</span>
-                            <span class="metric-value positive">${((metrics.crisp.mae - metrics.fuzzy.mae) / metrics.crisp.mae * 100).toFixed(1)}%</span>
+                            <span class="metric-value positive">${((metrics.crisp.mae - metrics.fuzzy.mae) / Math.abs(metrics.crisp.mae) * 100).toFixed(1)}%</span>
                         </div>
                         <div class="metric-row">
                             <span>Accuracy Gain:</span>
-                            <span class="metric-value positive">${((metrics.fuzzy.accuracy - metrics.crisp.accuracy) / metrics.crisp.accuracy * 100).toFixed(1)}%</span>
+                            <span class="metric-value positive">${safePercentGain(metrics.fuzzy.accuracy, metrics.crisp.accuracy).toFixed(1)}%</span>
                         </div>
                         <div class="metric-row">
                             <span>Satisfaction Gain:</span>
-                            <span class="metric-value positive">${((metrics.fuzzy.satisfaction - metrics.crisp.satisfaction) / metrics.crisp.satisfaction * 100).toFixed(1)}%</span>
+                            <span class="metric-value positive">${safePercentGain(metrics.fuzzy.satisfaction, metrics.crisp.satisfaction).toFixed(1)}%</span>
                         </div>
                     </div>
                 </div>
@@ -1281,10 +1367,10 @@ function displayAdvancedPerformanceComparison(result) {
     const metricsDisplay = document.getElementById('metrics-display');
     
     if (metricsDisplay) {
-        const improvementMAE = ((metrics.crisp.mae - metrics.fuzzy.mae) / metrics.crisp.mae * 100).toFixed(1);
-        const improvementAccuracy = ((metrics.fuzzy.accuracy - metrics.crisp.accuracy) / metrics.crisp.accuracy * 100).toFixed(1);
-        const improvementF1 = ((metrics.fuzzy.f1_score - metrics.crisp.f1_score) / metrics.crisp.f1_score * 100).toFixed(1);
-        const improvementSatisfaction = ((metrics.fuzzy.satisfaction - metrics.crisp.satisfaction) / metrics.crisp.satisfaction * 100).toFixed(1);
+        const improvementMAE = ((metrics.crisp.mae - metrics.fuzzy.mae) / Math.abs(metrics.crisp.mae) * 100).toFixed(1);
+        const improvementAccuracy = safePercentGain(metrics.fuzzy.accuracy, metrics.crisp.accuracy).toFixed(1);
+        const improvementF1 = safePercentGain(metrics.fuzzy.f1_score, metrics.crisp.f1_score).toFixed(1);
+        const improvementSatisfaction = safePercentGain(metrics.fuzzy.satisfaction, metrics.crisp.satisfaction).toFixed(1);
         
         metricsDisplay.innerHTML = `
             <div class="metrics-grid">
